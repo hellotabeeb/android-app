@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "430006296642",
+    "project_id": "hellotabeeb-4b6eb",
+    "storage_bucket": "hellotabeeb-4b6eb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:430006296642:android:c72e6233d566007e358ddb",
+        "android_client_info": {
+          "package_name": "com.example.hellotabeeb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIcfqZ9OK0_BCyYYEjP0deDF4tiEVar1k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
