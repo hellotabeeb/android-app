@@ -1,14 +1,14 @@
 package com.example.hellotabeeb.Screens.labtests
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +25,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    val selectedTests = remember { mutableStateListOf<TestDetail>() }
 
     val filteredTests = remember(testDetails, searchQuery) {
         if (searchQuery.isEmpty()) {
@@ -64,9 +65,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                     modifier = Modifier.fillMaxWidth()
                 )
 
-
                 Spacer(modifier = Modifier.height(20.dp))
-
 
                 // Search Bar
                 OutlinedTextField(
@@ -123,49 +122,88 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                     )
                 }
                 else -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        items(filteredTests) { test ->
-                            Card(
-                                shape = RoundedCornerShape(15.dp),  // Changed corner radius to 15dp
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(4.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
-                                    .height(120.dp)  // Increased card height
-                            ) {
-                                Column(
+                    Column {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp)
+                                .weight(1f)
+                        ) {
+                            items(filteredTests) { test ->
+                                Card(
+                                    shape = RoundedCornerShape(15.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    elevation = CardDefaults.cardElevation(4.dp),
                                     modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxHeight(),
-                                    verticalArrangement = Arrangement.SpaceBetween
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp)
+                                        .height(120.dp)
+                                        .clickable {
+                                            if (selectedTests.contains(test)) {
+                                                selectedTests.remove(test)
+                                            } else {
+                                                selectedTests.add(test)
+                                            }
+                                        }
                                 ) {
-                                    Text(
-                                        text = test.name,
-                                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
-                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(
+                                                text = test.name,
+                                                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
+                                            )
 
-                                    Text(
-                                        text = "20% OFF",
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontSize = 14.sp,
-                                            color = Color.Blue
-                                        )
-                                    )
+                                            Text(
+                                                text = "20% OFF",
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    fontSize = 14.sp,
+                                                    color = Color.Blue
+                                                )
+                                            )
 
-                                    Text(
-                                        text = "Fee: ${test.fee}",
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontSize = 14.sp,
-                                            color = Color.Blue
-                                        )
-                                    )
+                                            Text(
+                                                text = "Fee: ${test.fee}",
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    fontSize = 14.sp,
+                                                    color = Color.Blue
+                                                )
+                                            )
+                                        }
+
+                                        // Checkmark icon
+                                        if (selectedTests.contains(test)) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "Selected",
+                                                tint = Color.Green,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
+                        }
+
+                        Button(
+                            onClick = {
+                                val testNames = selectedTests.joinToString(", ") { it.name }
+                                val testFees = selectedTests.joinToString(", ") { it.fee }
+                                navController.navigate("confirmation_screen/$testNames/$testFees")
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            enabled = selectedTests.isNotEmpty()
+                        ) {
+                            Text("Proceed")
                         }
                     }
                 }
