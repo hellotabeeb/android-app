@@ -8,8 +8,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.hellotabeeb.Screens.labtests.AllLabsScreen
 import com.example.hellotabeeb.Screens.labtests.LabDetailScreen
 import com.example.hellotabeeb.Screens.labtests.ConfirmationScreen
-import com.example.hellotabeeb.homePage.AppointmentsScreen
-import com.example.hellotabeeb.homePage.RecordsScreen
+import com.example.hellotabeeb.Screens.homePage.AppointmentsScreen
+import com.example.hellotabeeb.Screens.homePage.RecordsScreen
 import com.example.hellotabeeb.homePage.homePage
 
 sealed class Screen(val route: String) {
@@ -18,8 +18,8 @@ sealed class Screen(val route: String) {
     object Records : Screen("records")
     object AllLabs : Screen("all_labs_screen")
     object LabDetail : Screen("lab_detail_screen")
-    object Confirmation : Screen("confirmation_screen/{testNames}/{testFees}") {
-        fun createRoute(testNames: String, testFees: String) = "confirmation_screen/$testNames/$testFees"
+    object Confirmation : Screen("confirmation_screen/{testName}/{testFee}") {
+        fun createRoute(testName: String, testFee: String) = "confirmation_screen/$testName/$testFee"
     }
 }
 
@@ -50,12 +50,12 @@ fun AppNavigation(navController: NavHostController = rememberNavController(), on
             LabDetailScreen(navController)
         }
         composable(Screen.Confirmation.route) { backStackEntry ->
-            val testNames = backStackEntry.arguments?.getString("testNames") ?: ""
-            val testFees = backStackEntry.arguments?.getString("testFees") ?: ""
+            val testName = backStackEntry.arguments?.getString("testName") ?: ""
+            val testFee = backStackEntry.arguments?.getString("testFee") ?: ""
             onDestinationChanged(Screen.Confirmation.route)
             ConfirmationScreen(
-                testName = testNames,
-                testFee = testFees,
+                testName = testName,
+                testFee = testFee,
                 onConfirmationComplete = {
                     navController.popBackStack(Screen.Home.route, false)
                 }

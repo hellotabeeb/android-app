@@ -10,19 +10,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun ConfirmationScreen(
     testName: String,
     testFee: String,
     onConfirmationComplete: () -> Unit,
     viewModel: ConfirmationViewModel = viewModel()
+
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
 
     val bookingState by viewModel.bookingState.collectAsState()
+
 
     LaunchedEffect(bookingState) {
         if (bookingState is ConfirmationViewModel.BookingState.Success) {

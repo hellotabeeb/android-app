@@ -47,11 +47,23 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/plexus/components.xml"
+            excludes += "META-INF/maven/**"
+            excludes += "META-INF/sisu/**"
         }
     }
 }
 
+configurations {
+    all {
+        exclude(group = "org.apache.maven.shared", module = "maven-artifact-transfer")
+        exclude(group = "org.apache.maven.plugins", module = "maven-gpg-plugin")
+        exclude(group = "org.sonatype.sisu", module = "sisu-inject-bean")
+    }
+}
+
 dependencies {
+    // AndroidX and Compose dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -62,6 +74,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.protolite.well.known.types)
     implementation(libs.transport.api)
+
+    // Testing dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -70,6 +84,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    // Compose UI dependencies
     implementation("androidx.compose.ui:ui:1.5.4")
     implementation("androidx.compose.material3:material3:1.1.2")
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.4")
@@ -77,10 +92,17 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
 
+    // Firebase dependencies
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore-ktx:24.4.0")
 
-    implementation("com.sendgrid:sendgrid-java:4.9.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
+    // Brevo dependency
+    implementation("com.brevo:brevo:1.0.0") {
+        exclude(group = "org.apache.maven.shared", module = "maven-artifact-transfer")
+        exclude(group = "org.apache.maven.plugins", module = "maven-gpg-plugin")
+    }
+
+    // Injection dependencies
+    implementation("javax.inject:javax.inject:1")
 }

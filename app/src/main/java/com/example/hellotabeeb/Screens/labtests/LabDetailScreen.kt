@@ -13,10 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.hellotabeeb.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,6 +132,9 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                 .weight(1f)
                         ) {
                             items(filteredTests) { test ->
+                                val discountedPrice = test.fee.toDoubleOrNull() ?: 0.0
+                                val originalPrice = discountedPrice / 0.8
+
                                 Card(
                                     shape = RoundedCornerShape(15.dp),
                                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -165,17 +170,28 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                                 text = "20% OFF",
                                                 style = MaterialTheme.typography.bodyMedium.copy(
                                                     fontSize = 14.sp,
-                                                    color = Color.Blue
+                                                    color = Color(0xFF1E88E5)
                                                 )
                                             )
 
-                                            Text(
-                                                text = "Fee: ${test.fee}",
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    fontSize = 14.sp,
-                                                    color = Color.Blue
+                                            Row {
+                                                Text(
+                                                    text = "RS. ${"%.2f".format(originalPrice)}",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        fontSize = 14.sp,
+                                                        color = Color.Gray,
+                                                        textDecoration = TextDecoration.LineThrough
+                                                    )
                                                 )
-                                            )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = " Now: RS. ${"%.2f".format(discountedPrice)}",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        fontSize = 14.sp,
+                                                        color = Color(0xFF1E88E5)
+                                                    )
+                                                )
+                                            }
                                         }
 
                                         // Checkmark icon
@@ -183,7 +199,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                             Icon(
                                                 imageVector = Icons.Default.Check,
                                                 contentDescription = "Selected",
-                                                tint = Color.Green,
+                                                tint = Color(0xFF43A047),
                                                 modifier = Modifier.size(24.dp)
                                             )
                                         }
@@ -194,9 +210,9 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
 
                         Button(
                             onClick = {
-                                val testNames = selectedTests.joinToString(", ") { it.name }
-                                val testFees = selectedTests.joinToString(", ") { it.fee }
-                                navController.navigate("confirmation_screen/$testNames/$testFees")
+                                val testName = selectedTests.joinToString(", ") { it.name }
+                                val testFee = selectedTests.joinToString(", ") { it.fee }
+                                navController.navigate(Screen.Confirmation.createRoute(testName, testFee))
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
