@@ -44,6 +44,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// MainActivity.kt
+
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
@@ -52,7 +54,7 @@ fun MainScreen() {
 
     Scaffold(
         bottomBar = {
-            if (currentRoute !in listOf("all_labs_screen", "lab_detail_screen")) {
+            if (currentRoute !in listOf("all_labs_screen", "lab_detail_screen", "confirmation_screen/{testName}/{testFee}")) {
                 BottomBar(navController)
             }
         }
@@ -63,25 +65,27 @@ fun MainScreen() {
             }
 
             // Sidebar toggle button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                IconButton(
-                    onClick = { showSidebar = !showSidebar }
+            if (currentRoute !in listOf("all_labs_screen", "lab_detail_screen", "confirmation_screen/{testName}/{testFee}")) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Open Sidebar",
-                        tint = Color.White
-                    )
+                    IconButton(
+                        onClick = { showSidebar = !showSidebar }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Open Sidebar",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
 
             // Show sidebar when toggled
-            if (showSidebar) {
+            if (showSidebar && currentRoute !in listOf("all_labs_screen", "lab_detail_screen", "confirmation_screen/{testName}/{testFee}")) {
                 SidebarHome(onDismiss = { showSidebar = false })
             }
         }

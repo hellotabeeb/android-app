@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.hellotabeeb.R
 
+// AllLabsScreen.kt
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllLabsScreen(navController: NavController) {
@@ -36,26 +38,37 @@ fun AllLabsScreen(navController: NavController) {
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "Lab Tests")
+                        Text(
+                            text = "Lab Tests",
+                            modifier = Modifier.offset(x = -16.dp),
+                            color = Color.Black  // Set text color to black
+                        )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.Black  // Set icon color to black
+                        )
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White  // Set background color to white
+                )
             )
         },
         content = { padding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(Color.White)  // Set background color to white
                     .padding(padding)
                     .padding(16.dp)
             ) {
-
                 Divider(
-                    color = Color.Black,
+                    color = Color.Black,  // Set divider color to black
                     thickness = 3.dp,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -64,7 +77,7 @@ fun AllLabsScreen(navController: NavController) {
                 // Card for Lab Test
                 Card(
                     shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),  // Set card color to white
                     elevation = CardDefaults.cardElevation(4.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -80,7 +93,7 @@ fun AllLabsScreen(navController: NavController) {
                         Box(
                             modifier = Modifier
                                 .size(64.dp)
-                                .background(Color.White, RectangleShape)
+                                .background(Color.White, RectangleShape)  // Set box color to white
                         ) {
                             Image(
                                 painter = painterResource(id = R.drawable.chughtai),  // Replace with the appropriate image resource
@@ -100,7 +113,8 @@ fun AllLabsScreen(navController: NavController) {
                                 text = "Chughtai Lab",
                                 style = TextStyle(
                                     fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black  // Set text color to black
                                 )
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -108,7 +122,7 @@ fun AllLabsScreen(navController: NavController) {
                                 text = "20% off on all tests",
                                 style = TextStyle(
                                     fontSize = 14.sp,
-                                    color = Color.Blue,
+                                    color = Color.Black,  // Set text color to black
                                     fontWeight = FontWeight.Medium
                                 )
                             )
@@ -120,7 +134,8 @@ fun AllLabsScreen(navController: NavController) {
                         Icon(
                             imageVector = Icons.Default.ArrowForwardIos,
                             contentDescription = "Forward",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
+                            tint = Color.Black  // Set icon color to black
                         )
                     }
                 }
