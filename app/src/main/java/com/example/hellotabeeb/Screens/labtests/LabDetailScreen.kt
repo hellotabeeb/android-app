@@ -29,6 +29,11 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
     var searchQuery by remember { mutableStateOf("") }
     val selectedTests = remember { mutableStateListOf<TestDetail>() }
 
+    // Custom colors for dark mode while keeping functionality
+    val backgroundColor = Color.White
+    val textColor = Color.Black
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     val filteredTests = remember(testDetails, searchQuery) {
         if (searchQuery.isEmpty()) {
             testDetails
@@ -50,44 +55,54 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                         ) {
                             Text(
                                 text = "Lab Tests",
-                                style = MaterialTheme.typography.titleLarge
+                                modifier = Modifier.offset(x = -16.dp),
+                                color = textColor
                             )
                         }
                     },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = textColor
+                            )
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = backgroundColor
+                    )
                 )
 
                 Divider(
-                    color = Color.Black,
+                    color = Color.Gray,
                     thickness = 3.dp,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Search Bar
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    placeholder = { Text("Search tests...") },
+                    placeholder = { Text("Search tests...", color = textColor.copy(alpha = 0.6f)) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search"
+                            contentDescription = "Search",
+                            tint = textColor
                         )
                     },
                     shape = RoundedCornerShape(8.dp),
                     singleLine = true,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        containerColor = Color.White,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        containerColor = backgroundColor,
+                        focusedTextColor = textColor,          // Use this instead of textColor
+                        unfocusedTextColor = textColor,        // Add this to ensure text color in both states
+                        focusedBorderColor = primaryColor,
                         unfocusedBorderColor = Color.Gray
                     )
                 )
@@ -97,7 +112,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(backgroundColor)
                 .padding(padding)
         ) {
             when {
@@ -109,7 +124,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                 error != null -> {
                     Text(
                         text = "Error: ${error ?: "Unknown error occurred"}",
-                        color = Color.Red,
+                        color = MaterialTheme.colorScheme.error,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(16.dp)
@@ -118,6 +133,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                 filteredTests.isEmpty() -> {
                     Text(
                         text = if (searchQuery.isEmpty()) "No tests found" else "No matching tests found",
+                        color = textColor,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(16.dp)
@@ -137,7 +153,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
 
                                 Card(
                                     shape = RoundedCornerShape(15.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    colors = CardDefaults.cardColors(containerColor = backgroundColor),
                                     elevation = CardDefaults.cardElevation(4.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -163,14 +179,17 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                         ) {
                                             Text(
                                                 text = test.name,
-                                                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
+                                                style = MaterialTheme.typography.titleMedium.copy(
+                                                    fontSize = 18.sp,
+                                                    color = textColor
+                                                )
                                             )
 
                                             Text(
                                                 text = "20% OFF",
                                                 style = MaterialTheme.typography.bodyMedium.copy(
                                                     fontSize = 14.sp,
-                                                    color = Color(0xFF1E88E5)
+                                                    color = primaryColor
                                                 )
                                             )
 
@@ -179,7 +198,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                                     text = "RS. ${"%.2f".format(originalPrice)}",
                                                     style = MaterialTheme.typography.bodyMedium.copy(
                                                         fontSize = 14.sp,
-                                                        color = Color.Gray,
+                                                        color = textColor.copy(alpha = 0.6f),
                                                         textDecoration = TextDecoration.LineThrough
                                                     )
                                                 )
@@ -188,18 +207,17 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                                     text = " Now: RS. ${"%.2f".format(discountedPrice)}",
                                                     style = MaterialTheme.typography.bodyMedium.copy(
                                                         fontSize = 14.sp,
-                                                        color = Color(0xFF1E88E5)
+                                                        color = primaryColor
                                                     )
                                                 )
                                             }
                                         }
 
-                                        // Checkmark icon
                                         if (selectedTests.contains(test)) {
                                             Icon(
                                                 imageVector = Icons.Default.Check,
                                                 contentDescription = "Selected",
-                                                tint = Color(0xFF43A047),
+                                                tint = primaryColor,
                                                 modifier = Modifier.size(24.dp)
                                             )
                                         }
@@ -217,7 +235,11 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            enabled = selectedTests.isNotEmpty()
+                            enabled = selectedTests.isNotEmpty(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = primaryColor,
+                                contentColor = Color.White
+                            )
                         ) {
                             Text("Proceed")
                         }
