@@ -54,7 +54,7 @@ fun MainScreen() {
 
     Scaffold(
         bottomBar = {
-            if (currentRoute !in listOf("all_labs_screen", "lab_detail_screen", "confirmation_screen/{testName}/{testFee}")) {
+            if (currentRoute !in listOf(Screen.Home.route, "all_labs_screen", "lab_detail_screen", "confirmation_screen/{testName}/{testFee}")) {
                 BottomBar(navController)
             }
         }
@@ -65,7 +65,7 @@ fun MainScreen() {
             }
 
             // Sidebar toggle button
-            if (currentRoute !in listOf("all_labs_screen", "lab_detail_screen", "confirmation_screen/{testName}/{testFee}")) {
+            if (currentRoute !in listOf(Screen.Home.route, "all_labs_screen", "lab_detail_screen", "confirmation_screen/{testName}/{testFee}")) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -85,7 +85,7 @@ fun MainScreen() {
             }
 
             // Show sidebar when toggled
-            if (showSidebar && currentRoute !in listOf("all_labs_screen", "lab_detail_screen", "confirmation_screen/{testName}/{testFee}")) {
+            if (showSidebar && currentRoute !in listOf(Screen.Home.route, "all_labs_screen", "lab_detail_screen", "confirmation_screen/{testName}/{testFee}")) {
                 SidebarHome(onDismiss = { showSidebar = false })
             }
         }

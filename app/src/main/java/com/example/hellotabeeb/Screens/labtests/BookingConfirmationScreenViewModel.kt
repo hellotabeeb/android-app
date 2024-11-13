@@ -9,6 +9,7 @@ import brevoModel.SendSmtpEmail
 import brevoModel.SendSmtpEmailReplyTo
 import brevoModel.SendSmtpEmailSender
 import brevoModel.SendSmtpEmailTo
+import com.example.hellotabeeb.BuildConfig
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,19 +19,19 @@ import kotlinx.coroutines.tasks.await
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.example.hellotabeeb.BuildConfig
 
 data class BookingDetails(
     val name: String = "",
     val email: String = "",
     val phone: String = "",
     val testName: String = "",
-    val testFee: String = ""
+    val testFee: String = "",
+    val totalFee: String = ""
 )
 
 class ConfirmationViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
-    private val BREVO_API_KEY = BuildConfig.BREVO_API_KEY
+    private val BREVO_API_KEYS = BuildConfig.BREVO_API_KEYS
 
     private val _bookingState = MutableStateFlow<BookingState>(BookingState.Initial)
     val bookingState: StateFlow<BookingState> = _bookingState
@@ -46,7 +47,7 @@ class ConfirmationViewModel : ViewModel() {
         // Configure Brevo API key
         val defaultClient = Configuration.getDefaultApiClient()
         val apiKeyAuth = defaultClient.getAuthentication("api-key") as ApiKeyAuth
-        apiKeyAuth.apiKey = BREVO_API_KEY
+        apiKeyAuth.apiKey = BREVO_API_KEYS
     }
 
     fun confirmBooking(bookingDetails: BookingDetails) {
@@ -72,20 +73,26 @@ class ConfirmationViewModel : ViewModel() {
 
     private suspend fun getUnusedCode(): String {
         return try {
+            // Modified query to handle string "false" instead of boolean false
             val snapshot = db.collection("codes")
-                .whereEqualTo("isUsed", "false")
+                .whereEqualTo("isUsed", "false")  // Changed to match string "false"
                 .limit(1)
                 .get()
                 .await()
+
+            println("Query completed. Found ${snapshot.size()} documents")
 
             if (snapshot.isEmpty) {
                 throw Exception("No discount codes available")
             }
 
             val document = snapshot.documents[0]
-            val code = document.getString("code") ?: throw Exception("Invalid discount code format")
-            code
+            val code = document.getString("code")
+            println("Retrieved code: $code")
+
+            code ?: throw Exception("Invalid discount code format")
         } catch (e: Exception) {
+            println("Error in getUnusedCode: ${e.message}")
             throw Exception("Failed to get discount code: ${e.message}")
         }
     }
@@ -94,6 +101,7 @@ class ConfirmationViewModel : ViewModel() {
         val batch = db.batch()
 
         try {
+            // Modified query to handle string "false"
             val codeQuery = db.collection("codes")
                 .whereEqualTo("code", code)
                 .whereEqualTo("isUsed", "false")
@@ -107,6 +115,7 @@ class ConfirmationViewModel : ViewModel() {
 
             val codeDoc = codeQuery.documents[0]
 
+            // Create in availedCodes collection
             val availedCodeRef = db.collection("availedCodes").document(code)
             val availedCodeData = hashMapOf(
                 "code" to code,
@@ -118,22 +127,27 @@ class ConfirmationViewModel : ViewModel() {
                 "availedAt" to Timestamp.now()
             )
 
+            // Delete from codes collection and add to availedCodes
             batch.delete(codeDoc.reference)
             batch.set(availedCodeRef, availedCodeData)
 
             batch.commit().await()
+            println("Successfully moved code to availedCodes")
+
         } catch (e: Exception) {
+            println("Error in moveCodeToAvailed: ${e.message}")
             throw Exception("Failed to process discount code: ${e.message}")
         }
     }
 
     private suspend fun sendConfirmationEmail(bookingDetails: BookingDetails, discountCode: String) {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.IO) {  // Add this wrapper
             try {
                 val apiInstance = TransactionalEmailsApi()
 
+                // Use a verified sender email from your Brevo account
                 val sender = SendSmtpEmailSender()
-                    .email("ahad.naseer@hellotabeeb.com")
+                    .email("support@hellotabeeb.com")
                     .name("HelloTabeeb Lab Services")
 
                 val to = listOf(
@@ -155,9 +169,9 @@ class ConfirmationViewModel : ViewModel() {
                                 <ul style="list-style-type: none; padding-left: 0;">
                                     <li><strong>Test:</strong> ${bookingDetails.testName}</li>
                                     <li><strong>Fee:</strong> ${bookingDetails.testFee}</li>
-                                    <li style="margin-top: 10px;"><strong>Your Discount Code:</strong>
+                                    <li style="margin-top: 10px;"><strong>Your Discount Code:</strong> 
                                         <span style="background-color: #e9ecef; padding: 5px 10px; border-radius: 3px;">
-                                            $discountCode
+                                            ${discountCode}
                                         </span>
                                     </li>
                                 </ul>
@@ -179,16 +193,34 @@ class ConfirmationViewModel : ViewModel() {
                     .to(to)
                     .subject(subject)
                     .htmlContent(htmlContent)
-                    .replyTo(SendSmtpEmailReplyTo().email("ahad.naseer@hellotabeeb.com").name("HelloTabeeb Support"))
+                    .replyTo(SendSmtpEmailReplyTo().email("support@hellotabeeb.com").name("HelloTabeeb Support"))
 
-                apiInstance.sendTransacEmail(sendSmtpEmail)
+                println("Attempting to send email to: ${bookingDetails.email}")
+
+                val result = apiInstance.sendTransacEmail(sendSmtpEmail)
+                println("Email sent successfully. MessageId: ${result.messageId}")
+
             } catch (e: brevo.ApiException) {
+                println("Brevo API Error: ${e.code} - ${e.responseBody}")
                 throw Exception("Failed to send email: ${e.message}")
             } catch (e: IOException) {
+                println("Network Error while sending email: ${e.message}")
                 throw Exception("Network error while sending email: ${e.message}")
             } catch (e: Exception) {
+                println("Unexpected error while sending email: ${e.message}")
+                e.printStackTrace()
                 throw Exception("Unexpected error while sending email: ${e.message}")
             }
         }
+    }
+
+    // Utility function to fix existing codes in database
+    suspend fun fixCodesInDatabase() {
+        // Implementation here
+    }
+
+    // Function to add new codes correctly
+    suspend fun addNewCode(codeValue: String) {
+        // Implementation here
     }
 }

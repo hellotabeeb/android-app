@@ -21,8 +21,8 @@ android {
             useSupportLibrary = true
         }
 
-        val brevoApiKey: String = project.findProperty("BREVO_API_KEY") as String? ?: ""
-        buildConfigField("String", "BREVO_API_KEY", "\"$brevoApiKey\"")
+        val brevoApiKey: String = project.findProperty("BREVO_API_KEYS") as String? ?: ""
+        buildConfigField("String", "BREVO_API_KEYS", "\"$brevoApiKey\"")
     }
 
     buildTypes {
@@ -91,15 +91,18 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
 
     // Firebase dependencies
-    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     // Brevo dependency
     implementation("com.brevo:brevo:1.0.0") {
         exclude(group = "org.apache.maven.shared", module = "maven-artifact-transfer")
         exclude(group = "org.apache.maven.plugins", module = "maven-gpg-plugin")
     }
+    implementation(libs.androidx.compose.material)
 
     // Testing dependencies
     testImplementation(libs.junit)
@@ -112,4 +115,9 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-tasks:18.1.0")
     implementation("javax.inject:javax.inject:1")
+
+
+
+    implementation("io.coil-kt.coil3:coil-compose:3.0.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.0")
 }
