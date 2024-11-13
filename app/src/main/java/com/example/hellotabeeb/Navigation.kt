@@ -2,9 +2,11 @@ package com.example.hellotabeeb
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.hellotabeeb.Screens.labtests.AllLabsScreen
 import com.example.hellotabeeb.Screens.labtests.LabDetailScreen
 import com.example.hellotabeeb.Screens.labtests.ConfirmationScreen
@@ -49,16 +51,29 @@ fun AppNavigation(navController: NavHostController = rememberNavController(), on
             onDestinationChanged(Screen.LabDetail.route)
             LabDetailScreen(navController)
         }
-        composable(Screen.Confirmation.route) { backStackEntry ->
-            val testName = backStackEntry.arguments?.getString("testName") ?: ""
-            val testFee = backStackEntry.arguments?.getString("testFee") ?: ""
+        composable(
+            route = Screen.Confirmation.route,
+            arguments = listOf(
+                navArgument("testName") {
+                    type = NavType.StringType
+                    nullable = false
+                },
+                navArgument("testFee") {
+                    type = NavType.StringType
+                    nullable = false
+                }
+            )
+        ) { backStackEntry ->
+            val encodedTestName = backStackEntry.arguments?.getString("testName") ?: ""
+            val encodedTestFee = backStackEntry.arguments?.getString("testFee") ?: ""
+            // Decode the parameters
+            val testName = java.net.URLDecoder.decode(encodedTestName, "UTF-8")
+            val testFee = java.net.URLDecoder.decode(encodedTestFee, "UTF-8")
             onDestinationChanged(Screen.Confirmation.route)
             ConfirmationScreen(
                 testName = testName,
                 testFee = testFee,
-                onConfirmationComplete = {
-                    navController.popBackStack(Screen.Home.route, false)
-                }
+                onConfirmationComplete = { navController.popBackStack() }
             )
         }
     }

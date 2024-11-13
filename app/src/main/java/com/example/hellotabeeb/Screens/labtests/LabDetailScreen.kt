@@ -28,19 +28,28 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
     val error by viewModel.error.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     val selectedTests = remember { mutableStateListOf<TestDetail>() }
+    var selectedDiscount by remember { mutableStateOf<Int?>(null) }
 
-    // Custom colors for dark mode while keeping functionality
     val backgroundColor = Color.White
     val textColor = Color.Black
     val primaryColor = MaterialTheme.colorScheme.primary
+    val accentColor = Color(0xFF4782DE)
 
-    val filteredTests = remember(testDetails, searchQuery) {
-        if (searchQuery.isEmpty()) {
-            testDetails
-        } else {
-            testDetails.filter {
-                it.name.lowercase().contains(searchQuery.lowercase())
+    val filteredTests = remember(testDetails, searchQuery, selectedDiscount) {
+        testDetails.filter { test ->
+            val matchesSearch = if (searchQuery.isEmpty()) {
+                true
+            } else {
+                test.name.lowercase().contains(searchQuery.lowercase())
             }
+
+            val matchesDiscount = if (selectedDiscount == null) {
+                true
+            } else {
+                test.discountPercentage == selectedDiscount
+            }
+
+            matchesSearch && matchesDiscount
         }
     }
 
@@ -100,12 +109,45 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                     singleLine = true,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         containerColor = backgroundColor,
-                        focusedTextColor = textColor,          // Use this instead of textColor
-                        unfocusedTextColor = textColor,        // Add this to ensure text color in both states
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
                         focusedBorderColor = primaryColor,
                         unfocusedBorderColor = Color.Gray
                     )
                 )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Button(
+                        onClick = {
+                            selectedDiscount = if (selectedDiscount == 20) null else 20
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedDiscount == 20) accentColor else Color.Gray.copy(alpha = 0.2f),
+                            contentColor = if (selectedDiscount == 20) Color.White else textColor
+                        ),
+                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    ) {
+                        Text("20% OFF")
+                    }
+
+                    Button(
+                        onClick = {
+                            selectedDiscount = if (selectedDiscount == 30) null else 30
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedDiscount == 30) accentColor else Color.Gray.copy(alpha = 0.2f),
+                            contentColor = if (selectedDiscount == 30) Color.White else textColor
+                        ),
+                        modifier = Modifier.weight(1f).padding(start = 8.dp)
+                    ) {
+                        Text("30% OFF")
+                    }
+                }
             }
         }
     ) { padding ->
@@ -148,8 +190,8 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                 .weight(1f)
                         ) {
                             items(filteredTests) { test ->
-                                val discountedPrice = test.fee.toDoubleOrNull() ?: 0.0
-                                val originalPrice = discountedPrice / 0.8
+                                val actualPrice = test.fee.toDoubleOrNull() ?: 0.0
+                                val discountedPrice = actualPrice * (1 - test.discountPercentage / 100.0)
 
                                 Card(
                                     shape = RoundedCornerShape(15.dp),
@@ -186,16 +228,16 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                             )
 
                                             Text(
-                                                text = "20% OFF",
+                                                text = "${test.discountPercentage}% OFF",
                                                 style = MaterialTheme.typography.bodyMedium.copy(
                                                     fontSize = 14.sp,
-                                                    color = primaryColor
+                                                    color = accentColor
                                                 )
                                             )
 
                                             Row {
                                                 Text(
-                                                    text = "RS. ${"%.2f".format(originalPrice)}",
+                                                    text = "RS. ${"%.2f".format(actualPrice)}",
                                                     style = MaterialTheme.typography.bodyMedium.copy(
                                                         fontSize = 14.sp,
                                                         color = textColor.copy(alpha = 0.6f),
@@ -207,7 +249,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                                     text = " Now: RS. ${"%.2f".format(discountedPrice)}",
                                                     style = MaterialTheme.typography.bodyMedium.copy(
                                                         fontSize = 14.sp,
-                                                        color = primaryColor
+                                                        color = accentColor
                                                     )
                                                 )
                                             }
@@ -217,7 +259,7 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
                                             Icon(
                                                 imageVector = Icons.Default.Check,
                                                 contentDescription = "Selected",
-                                                tint = primaryColor,
+                                                tint = accentColor,
                                                 modifier = Modifier.size(24.dp)
                                             )
                                         }
@@ -228,16 +270,23 @@ fun LabDetailScreen(navController: NavController, viewModel: LabDetailViewModel 
 
                         Button(
                             onClick = {
-                                val testName = selectedTests.joinToString(", ") { it.name }
-                                val testFee = selectedTests.joinToString(", ") { it.fee }
-                                navController.navigate(Screen.Confirmation.createRoute(testName, testFee))
+                                val testNames = selectedTests.joinToString(",") { it.name }
+                                val testFees = selectedTests.joinToString(",") {
+                                    val actualPrice = it.fee.toDoubleOrNull() ?: 0.0
+                                    val discountedPrice = actualPrice * (1 - it.discountPercentage / 100.0)
+                                    discountedPrice.toString()
+                                }
+                                // Encode the strings to handle spaces and special characters
+                                val encodedTestNames = java.net.URLEncoder.encode(testNames, "UTF-8")
+                                val encodedTestFees = java.net.URLEncoder.encode(testFees, "UTF-8")
+                                navController.navigate(Screen.Confirmation.createRoute(encodedTestNames, encodedTestFees))
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
                             enabled = selectedTests.isNotEmpty(),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = primaryColor,
+                                containerColor = accentColor,
                                 contentColor = Color.White
                             )
                         ) {

@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "430006296642",
     "project_id": "hellotabeeb-4b6eb",
-    "storage_bucket": "hellotabeeb-4b6eb.appspot.com"
+    "storage_bucket": "hellotabeeb-4b6eb.firebasestorage.app"
   },
   "client": [
     {
@@ -12,7 +12,20 @@
           "package_name": "com.example.hellotabeeb"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "430006296642-iut0s19eq7vuch5uld0r3anb3ms58fln.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hellotabeeb",
+            "certificate_hash": "ff22663a1a67e02d274466c43ffc0b751933b7e7"
+          }
+        },
+        {
+          "client_id": "430006296642-1mt4777mo4aifkg9rfa03i26rfpdhm4r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCIcfqZ9OK0_BCyYYEjP0deDF4tiEVar1k"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "430006296642-1mt4777mo4aifkg9rfa03i26rfpdhm4r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

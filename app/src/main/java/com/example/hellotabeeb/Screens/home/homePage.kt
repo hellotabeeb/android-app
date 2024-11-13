@@ -27,7 +27,15 @@ import com.example.hellotabeeb.Screen
 
 
 @Composable
-fun HomeServiceCard(navController: NavHostController, title: String, icon: ImageVector, route: String) {
+fun HomeServiceCard(
+    navController: NavHostController,
+    title: String,
+    icon: ImageVector,
+    route: String,
+    showPopup: Boolean = false
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -36,7 +44,13 @@ fun HomeServiceCard(navController: NavHostController, title: String, icon: Image
             modifier = Modifier
                 .width(80.dp)
                 .height(120.dp)
-                .clickable { navController.navigate(route) },
+                .clickable {
+                    if (showPopup) {
+                        showDialog = true
+                    } else {
+                        navController.navigate(route)
+                    }
+                },
             colors = CardDefaults.cardColors(containerColor = Color(0xFF4782DE)),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
@@ -48,7 +62,7 @@ fun HomeServiceCard(navController: NavHostController, title: String, icon: Image
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
-                    modifier = Modifier.size(48.dp),  // Increased icon size
+                    modifier = Modifier.size(48.dp),
                     tint = Color.White
                 )
             }
@@ -60,10 +74,23 @@ fun HomeServiceCard(navController: NavHostController, title: String, icon: Image
             fontSize = 12.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
+
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text("Feature Coming Soon") },
+                text = { Text("This feature will be available soon. Please stay connected.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = { showDialog = false }
+                    ) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
     }
 }
-
-
 
 
 
@@ -102,20 +129,20 @@ fun HomeTopBanner() {
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(16.dp))
-          OutlinedTextField(
-    value = "",
-    onValueChange = {},
-    placeholder = { Text("Find doctors, specialists...") },
-    modifier = Modifier
-        .fillMaxWidth(0.9f)  // Increased width
-        .padding(horizontal = 16.dp),
-    shape = RoundedCornerShape(24.dp),
-    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-    colors = TextFieldDefaults.outlinedTextFieldColors(
-        containerColor = Color.White,
-        unfocusedBorderColor = Color.LightGray
-    )
-)
+            OutlinedTextField(
+                value = "",
+                onValueChange = {},
+                placeholder = { Text("Find doctors, specialists...") },
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)  // Increased width
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(24.dp),
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = Color.White,
+                    unfocusedBorderColor = Color.LightGray
+                )
+            )
         }
     }
 }
@@ -161,9 +188,27 @@ fun HomeMainSection(navController: NavHostController) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    HomeServiceCard(navController, "Appointments", Icons.Default.Event, Screen.Appointments.route)
-                    HomeServiceCard(navController, "Nursing", Icons.Default.LocalHospital, "nursing_route")
-                    HomeServiceCard(navController, "Physiotherapy", Icons.Default.FitnessCenter, "physiotherapy_route")
+                    HomeServiceCard(
+                        navController,
+                        "Lab tests",
+                        Icons.Default.Biotech,
+                        "all_labs_screen",
+                        showPopup = false
+                    )
+                    HomeServiceCard(
+                        navController,
+                        "Nursing",
+                        Icons.Default.LocalHospital,
+                        "nursing_route",
+                        showPopup = true
+                    )
+                    HomeServiceCard(
+                        navController,
+                        "Physiotherapy",
+                        Icons.Default.FitnessCenter,
+                        "physiotherapy_route",
+                        showPopup = true
+                    )
                 }
                 Spacer(modifier = Modifier.height(26.dp))
                 // Second row of cards
@@ -171,14 +216,35 @@ fun HomeMainSection(navController: NavHostController) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    HomeServiceCard(navController, "Medicines", Icons.Default.LocalPharmacy, "medicines_route")
-                    HomeServiceCard(navController, "Lab tests", Icons.Default.Biotech, "all_labs_screen")
-                    HomeServiceCard(navController, "Home health care", Icons.Default.Home, "home_health_care_route")
+                    HomeServiceCard(
+                        navController,
+                        "Medicines",
+                        Icons.Default.LocalPharmacy,
+                        "medicines_route",
+                        showPopup = true
+                    )
+                    HomeServiceCard(
+                        navController,
+                        "Appointments",
+                        Icons.Default.Event,
+                        Screen.Appointments.route,
+                        showPopup = true
+                    )
+                    HomeServiceCard(
+                        navController,
+                        "Home health care",
+                        Icons.Default.Home,
+                        "home_health_care_route",
+                        showPopup = true
+                    )
                 }
             }
         }
     }
 }
+
+
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewHomePage() {

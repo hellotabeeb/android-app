@@ -119,7 +119,7 @@ fun AllLabsScreen(navController: NavController) {
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "20% off on all tests",
+                                text = "upto 30% off on all tests",
                                 style = TextStyle(
                                     fontSize = 14.sp,
                                     color = Color.Black,  // Set text color to black
