@@ -103,6 +103,7 @@ dependencies {
         exclude(group = "org.apache.maven.plugins", module = "maven-gpg-plugin")
     }
     implementation(libs.androidx.compose.material)
+    implementation(libs.play.services.location)
 
     // Testing dependencies
     testImplementation(libs.junit)
