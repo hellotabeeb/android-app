@@ -7,12 +7,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.hellotabeeb.Screens.appointments.DoctorsAvailable
 import com.example.hellotabeeb.Screens.labtests.AllLabsScreen
 import com.example.hellotabeeb.Screens.labtests.LabDetailScreen
 import com.example.hellotabeeb.Screens.labtests.ConfirmationScreen
 import com.example.hellotabeeb.Screens.homePage.AppointmentsScreen
 import com.example.hellotabeeb.Screens.homePage.RecordsScreen
 import com.example.hellotabeeb.homePage.homePage
+import java.net.URLDecoder
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
@@ -20,20 +22,35 @@ sealed class Screen(val route: String) {
     object Records : Screen("records")
     object AllLabs : Screen("all_labs_screen")
     object LabDetail : Screen("lab_detail_screen")
-    object Confirmation : Screen("confirmation_screen/{testName}/{testFee}") {
-        fun createRoute(testName: String, testFee: String) = "confirmation_screen/$testName/$testFee"
+    object Confirmation : Screen("confirmation_screen/{testName}/{testFee}/{labName}") {
+        fun createRoute(testName: String, testFee: String, labName: String) =
+            "confirmation_screen/$testName/$testFee/$labName"
     }
 }
 
 @Composable
-fun AppNavigation(navController: NavHostController = rememberNavController(), onDestinationChanged: (String) -> Unit) {
+fun AppNavigation(
+    navController: NavHostController = rememberNavController(),
+    onDestinationChanged: (String) -> Unit,
+    city: String, // Add city as a parameter
+    loading: Boolean // Add loading as a parameter
+) {
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route
     ) {
+        composable(
+            route = "lab_detail_screen/{labName}",
+            arguments = listOf(navArgument("labName") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val labName = backStackEntry.arguments?.getString("labName") ?: ""
+            onDestinationChanged("lab_detail_screen")
+            LabDetailScreen(navController, labName) // Pass labName to LabDetailScreen
+        }
+
         composable(Screen.Home.route) {
             onDestinationChanged(Screen.Home.route)
-            homePage(navController)
+            homePage(navController, city, loading, Screen.Home.route) // Pass city, loading, and currentRoute
         }
         composable(Screen.Appointments.route) {
             onDestinationChanged(Screen.Appointments.route)
@@ -47,34 +64,29 @@ fun AppNavigation(navController: NavHostController = rememberNavController(), on
             onDestinationChanged(Screen.AllLabs.route)
             AllLabsScreen(navController)
         }
-        composable(Screen.LabDetail.route) {
-            onDestinationChanged(Screen.LabDetail.route)
-            LabDetailScreen(navController)
-        }
         composable(
             route = Screen.Confirmation.route,
             arguments = listOf(
-                navArgument("testName") {
-                    type = NavType.StringType
-                    nullable = false
-                },
-                navArgument("testFee") {
-                    type = NavType.StringType
-                    nullable = false
-                }
+                navArgument("testName") { type = NavType.StringType },
+                navArgument("testFee") { type = NavType.StringType },
+                navArgument("labName") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val encodedTestName = backStackEntry.arguments?.getString("testName") ?: ""
-            val encodedTestFee = backStackEntry.arguments?.getString("testFee") ?: ""
-            // Decode the parameters
-            val testName = java.net.URLDecoder.decode(encodedTestName, "UTF-8")
-            val testFee = java.net.URLDecoder.decode(encodedTestFee, "UTF-8")
-            onDestinationChanged(Screen.Confirmation.route)
+            val testName = URLDecoder.decode(backStackEntry.arguments?.getString("testName"), "UTF-8")
+            val testFee = URLDecoder.decode(backStackEntry.arguments?.getString("testFee"), "UTF-8")
+            val labName = URLDecoder.decode(backStackEntry.arguments?.getString("labName"), "UTF-8")
+
             ConfirmationScreen(
                 testName = testName,
                 testFee = testFee,
+                labName = labName,
                 onConfirmationComplete = { navController.popBackStack() }
             )
+        }
+
+        // Add the new route for DoctorsAvailable
+        composable("doctors_available") {
+            DoctorsAvailable(navController)
         }
     }
 }

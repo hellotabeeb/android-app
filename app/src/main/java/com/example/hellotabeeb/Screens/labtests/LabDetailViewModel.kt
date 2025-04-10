@@ -1,11 +1,9 @@
 package com.example.hellotabeeb.Screens.labtests
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
 data class TestDetail(
     val name: String = "",
@@ -23,37 +21,33 @@ class LabDetailViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    // List of tests that should have 30% discount
     private val specialDiscountTests = listOf("Lipid Profile", "Serum 25-OH Vitamin D", "Glycosylated Hemoglobin (HbA1c)")
 
-    init {
-        fetchTestDetails()
-    }
-
-    private fun customTestSort(test: TestDetail): Pair<Int, String> {
-        val name = test.name.trim()
-        return when {
-            name.first().isDigit() -> Pair(1, name.lowercase())
-            else -> Pair(0, name.lowercase())
-        }
-    }
-
-    private fun fetchTestDetails() {
+    fun fetchTestDetails(labName: String) {
         _isLoading.value = true
         _error.value = null
 
         val db = FirebaseFirestore.getInstance()
+        val firestoreLabName = getFirestoreLabName(labName)
         db.collection("labs")
-            .document("chughtaiLab")
+            .document(firestoreLabName) // Use mapped lab name to fetch the correct lab's tests
             .collection("tests")
             .get()
             .addOnSuccessListener { result ->
+                val discountPercentage = when (firestoreLabName) {
+                    "chughtaiLab" -> 20
+                    "excel" -> 25
+                    "essa" -> 20
+                    "IDC" -> 15
+                    else -> 20
+                }
+
                 val tests = result.documents.map { document ->
                     val name = document.getString("Name") ?: ""
                     TestDetail(
                         name = name,
                         fee = document.getString("Fees") ?: "",
-                        discountPercentage = if (specialDiscountTests.contains(name)) 30 else 20
+                        discountPercentage = if (firestoreLabName == "chughtaiLab" && specialDiscountTests.contains(name)) 30 else discountPercentage
                     )
                 }.sortedWith(compareBy(
                     { customTestSort(it).first },
@@ -66,5 +60,23 @@ class LabDetailViewModel : ViewModel() {
                 _error.value = exception.message
                 _isLoading.value = false
             }
+    }
+
+    private fun customTestSort(test: TestDetail): Pair<Int, String> {
+        val name = test.name.trim()
+        return when {
+            name.first().isDigit() -> Pair(1, name.lowercase())
+            else -> Pair(0, name.lowercase())
+        }
+    }
+}
+
+private fun getFirestoreLabName(labName: String): String {
+    return when (labName) {
+        "Chughtai Lab" -> "chughtaiLab"
+        "Excel Labs" -> "excel"
+        "Dr. Essa Laboratory & Diagnostic Centre" -> "essa"
+        "Islamabad Diagnostic Center" -> "IDC"
+        else -> labName
     }
 }
