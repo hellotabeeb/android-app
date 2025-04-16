@@ -80,7 +80,8 @@ fun AppNavigation(
                 testName = testName,
                 testFee = testFee,
                 labName = labName,
-                onConfirmationComplete = { navController.popBackStack() }
+                onConfirmationComplete = { navController.popBackStack() },
+                navController = navController  // Pass the navController here
             )
         }
 

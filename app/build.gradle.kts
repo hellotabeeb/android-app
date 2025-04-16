@@ -6,6 +6,8 @@ plugins {
 }
 
 android {
+
+
     namespace = "com.example.hellotabeeb"
     compileSdk = 34
 
@@ -62,6 +64,13 @@ android {
             excludes += "META-INF/sisu/**"
         }
     }
+
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("src/main/assets")
+        }
+    }
+
 }
 
 configurations.all {
@@ -104,6 +113,7 @@ dependencies {
     }
     implementation(libs.androidx.compose.material)
     implementation(libs.play.services.location)
+    implementation(libs.androidx.room.runtime.android)
 
     // Testing dependencies
     testImplementation(libs.junit)
@@ -121,4 +131,14 @@ dependencies {
 
     implementation("io.coil-kt.coil3:coil-compose:3.0.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.0")
+
+    // Google Drive API
+    implementation("com.google.api-client:google-api-client-android:1.33.0")
+    implementation("com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.6.0")
+
+// For better URI handling
+    implementation("androidx.documentfile:documentfile:1.0.1")
+
+
 }

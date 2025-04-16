@@ -1,5 +1,8 @@
 package com.example.hellotabeeb.Screens.labtests
 
+import android.app.Application
+import android.net.Uri
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import brevo.auth.ApiKeyAuth
@@ -10,6 +13,7 @@ import brevoModel.SendSmtpEmailReplyTo
 import brevoModel.SendSmtpEmailSender
 import brevoModel.SendSmtpEmailTo
 import com.example.hellotabeeb.BuildConfig
+import com.example.hellotabeeb.utils.PrescriptionUploadToDrive
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,15 +29,21 @@ data class BookingDetails(
     val name: String = "",
     val email: String = "",
     val phone: String = "",
+    val age: String = "",
     val testName: String = "",
     val testFee: String = "",
     val totalFee: String = "",
-    val labName: String = "" // Add lab name property
+    val labName: String = "",
+    val hasPrescription: Boolean = false,
+    val prescriptionUri: Uri? = null,    // Local URI
+    val prescriptionUrl: String = ""     // Drive URL after upload
 )
 
-class ConfirmationViewModel : ViewModel() {
+class ConfirmationViewModel(application: Application) : AndroidViewModel(application) {
     private val db = FirebaseFirestore.getInstance()
     private val BREVO_API_KEYS = BuildConfig.BREVO_API_KEYS
+
+
 
     private val _bookingState = MutableStateFlow<BookingState>(BookingState.Initial)
     val bookingState: StateFlow<BookingState> = _bookingState
@@ -60,11 +70,25 @@ class ConfirmationViewModel : ViewModel() {
                 // 1. Get code based on lab name
                 val discountCode = getUnusedCode(bookingDetails.labName)
 
-                // 2. Move code to availedCodes collection with user details
-                moveCodeToAvailed(discountCode, bookingDetails)
+                // 2. Upload prescription to Google Drive if available
+                var prescriptionUrl = ""
+                if (bookingDetails.hasPrescription && bookingDetails.prescriptionUri != null) {
+                    val uploader = PrescriptionUploadToDrive(getApplication())
+                    prescriptionUrl = uploader.uploadPrescription(
+                        bookingDetails.prescriptionUri,
+                        bookingDetails.name,
+                        discountCode
+                    )
+                }
 
-                // 3. Send confirmation email
-                sendConfirmationEmail(bookingDetails, discountCode)
+                // 3. Create updated booking details with prescription URL
+                val updatedBookingDetails = bookingDetails.copy(prescriptionUrl = prescriptionUrl)
+
+                // 4. Move code to availedCodes collection with user details
+                moveCodeToAvailed(discountCode, updatedBookingDetails)
+
+                // 5. Send confirmation email
+                sendConfirmationEmail(updatedBookingDetails, discountCode)
 
                 _bookingState.value = BookingState.Success(discountCode)
             } catch (e: Exception) {
@@ -109,67 +133,77 @@ class ConfirmationViewModel : ViewModel() {
         }
     }
 
-    private suspend fun moveCodeToAvailed(code: String, bookingDetails: BookingDetails) {
-        val batch = db.batch()
-        val firestoreLabName = getFirestoreLabName(bookingDetails.labName)
+private suspend fun moveCodeToAvailed(code: String, bookingDetails: BookingDetails) {
+    val batch = db.batch()
+    val firestoreLabName = getFirestoreLabName(bookingDetails.labName)
 
-        try {
-            // Only delete from codes collection for Chughtai Lab
-            if (firestoreLabName == "chughtaiLab") {
-                val codeQuery = db.collection("codes")
-                    .whereEqualTo("code", code)
-                    .whereEqualTo("isUsed", "false")
-                    .limit(1)
-                    .get()
-                    .await()
+    try {
+        // Only delete from codes collection for Chughtai Lab
+        if (firestoreLabName == "chughtaiLab") {
+            val codeQuery = db.collection("codes")
+                .whereEqualTo("code", code)
+                .whereEqualTo("isUsed", "false")
+                .limit(1)
+                .get()
+                .await()
 
-                if (!codeQuery.isEmpty) {
-                    batch.delete(codeQuery.documents[0].reference)
-                } else {
-                    throw Exception("Code not found or already used")
-                }
+            if (!codeQuery.isEmpty) {
+                batch.delete(codeQuery.documents[0].reference)
+            } else {
+                throw Exception("Code not found or already used")
             }
-
-            // Get current month-year format (e.g., "01-2025")
-            val calendar = java.util.Calendar.getInstance()
-            val monthYear = String.format(
-                "%02d-%d",
-                calendar.get(java.util.Calendar.MONTH) + 1,
-                calendar.get(java.util.Calendar.YEAR)
-            )
-
-            // Create code data
-            val availedCodeData = hashMapOf(
-                "code" to code,
-                "userName" to bookingDetails.name,
-                "userEmail" to bookingDetails.email,
-                "userPhone" to bookingDetails.phone,
-                "testName" to bookingDetails.testName,
-                "testFee" to bookingDetails.testFee,
-                "labName" to bookingDetails.labName,
-                "labNameFirestore" to firestoreLabName,
-                "availedAt" to Timestamp.now()
-            )
-
-            // Correctly define document/collection references
-            // Structure: availedCodes (collection) / monthYear (document) / codes (collection) / code (document)
-            val codeDocRef = db.collection("availedCodes")
-                               .document(monthYear)
-                               .collection("codes")
-                               .document(code)
-
-            // Create the monthly document if it doesn't exist
-            val monthYearDocRef = db.collection("availedCodes").document(monthYear)
-            batch.set(monthYearDocRef, hashMapOf<String, Any>(), SetOptions.merge())
-
-            // Save code data
-            batch.set(codeDocRef, availedCodeData)
-
-            batch.commit().await()
-        } catch (e: Exception) {
-            throw Exception("Failed to process discount code: ${e.message}")
         }
+
+        // Get current month-year format (e.g., "01-2025")
+        val calendar = java.util.Calendar.getInstance()
+        val monthYear = String.format(
+            "%02d-%d",
+            calendar.get(java.util.Calendar.MONTH) + 1,
+            calendar.get(java.util.Calendar.YEAR)
+        )
+
+        val availedCodeData = hashMapOf(
+            "code" to code,
+            "userName" to bookingDetails.name,
+            "userEmail" to bookingDetails.email,
+            "userPhone" to bookingDetails.phone,
+            "userAge" to bookingDetails.age,
+            "hasPrescription" to bookingDetails.hasPrescription,
+            "prescriptionUrl" to bookingDetails.prescriptionUrl, // Add this line
+            "testName" to bookingDetails.testName,
+            "testFee" to bookingDetails.testFee,
+            "labName" to bookingDetails.labName,
+            "labNameFirestore" to firestoreLabName,
+            "availedAt" to Timestamp.now()
+        )
+
+        // Create the monthly document if it doesn't exist
+        val monthYearDocRef = db.collection("availedCodes").document(monthYear)
+        batch.set(monthYearDocRef, hashMapOf<String, Any>(), SetOptions.merge())
+
+        // Generate a unique document ID
+        val uniqueDocId = if (firestoreLabName == "chughtaiLab") {
+            // For Chughtai Lab, use the code itself as before
+            code
+        } else {
+            // For static codes, append a timestamp to make it unique
+            "${code}_${System.currentTimeMillis()}"
+        }
+
+        // Save code data with the unique document ID
+        val codeDocRef = db.collection("availedCodes")
+                          .document(monthYear)
+                          .collection("codes")
+                          .document(uniqueDocId)
+
+        // Save code data
+        batch.set(codeDocRef, availedCodeData)
+
+        batch.commit().await()
+    } catch (e: Exception) {
+        throw Exception("Failed to process discount code: ${e.message}")
     }
+}
 
     // Import this function from LabDetailViewModel
     private fun getFirestoreLabName(labName: String): String {

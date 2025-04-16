@@ -218,33 +218,19 @@ package com.example.hellotabeeb.Screens.labtests
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
+                            modifier = Modifier.padding(16.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
-                                    Text(
-                                        text = "${selectedTests.size} test${if (selectedTests.size > 1) "s" else ""} selected",
-                                        fontWeight = FontWeight.Bold,
-                                        color = textPrimary
-                                    )
-
-                                    val totalPrice = selectedTests.sumOf { test ->
-                                        val price = test.fee.toDoubleOrNull() ?: 0.0
-                                        price * (1 - test.discountPercentage / 100.0)
-                                    }
-
-                                    Text(
-                                        text = "Total: Rs. ${String.format("%.2f", totalPrice)}",
-                                        color = accentColor,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
+                                // Only show the test count, remove price information
+                                Text(
+                                    text = "${selectedTests.size} test${if (selectedTests.size > 1) "s" else ""} selected",
+                                    color = textPrimary,
+                                    fontWeight = FontWeight.Medium
+                                )
 
                                 Button(
                                     onClick = {
@@ -267,13 +253,9 @@ package com.example.hellotabeeb.Screens.labtests
                                 ) {
                                     Text(
                                         "Proceed to Booking",
-                                        fontWeight = FontWeight.Medium,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
                                         color = Color.White
-                                    )
-                                    Icon(
-                                        Icons.Default.ArrowForward,
-                                        contentDescription = null,
-                                        modifier = Modifier.padding(start = 8.dp)
                                     )
                                 }
                             }

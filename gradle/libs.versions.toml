@@ -12,6 +12,7 @@ protoliteWellKnownTypes = "18.0.0"
 transportApi = "3.2.0"
 composeMaterial = "1.4.0"
 playServicesLocation = "21.3.0"
+roomRuntimeAndroid = "2.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -32,6 +33,7 @@ protolite-well-known-types = { group = "com.google.firebase", name = "protolite-
 transport-api = { group = "com.google.android.datatransport", name = "transport-api", version.ref = "transportApi" }
 androidx-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "composeMaterial" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+androidx-room-runtime-android = { group = "androidx.room", name = "room-runtime-android", version.ref = "roomRuntimeAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
