@@ -23,8 +23,11 @@ android {
             useSupportLibrary = true
         }
 
-        val brevoApiKey: String = project.findProperty("BREVO_API_KEYS") as String? ?: ""
-        buildConfigField("String", "BREVO_API_KEYS", "\"$brevoApiKey\"")
+        buildConfigField("String", "FOURSQUARE_API_KEY", "\"${project.findProperty("FOURSQUARE_API_KEY") ?: ""}\"")
+        buildConfigField("String", "BREVO_API_KEY", "\"${project.findProperty("BREVO_API_KEYS") ?: ""}\"")
+
+
+
     }
 
     buildTypes {
@@ -139,6 +142,15 @@ dependencies {
 
 // For better URI handling
     implementation("androidx.documentfile:documentfile:1.0.1")
+
+
+    //dependencies for the square up
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
 
 
 }

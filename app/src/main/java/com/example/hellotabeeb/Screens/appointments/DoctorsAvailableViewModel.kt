@@ -1,53 +1,149 @@
-// DoctorsAvailableViewModel.kt
 package com.example.hellotabeeb.Screens.appointments
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-
-data class Doctor(
-    val name: String = "",
-    val profilePicture: String = "",
-    val qualification: String = "",
-    val specialization: String = ""
-)
 
 class DoctorsAvailableViewModel : ViewModel() {
     private val _doctors = MutableStateFlow<List<Doctor>>(emptyList())
     val doctors: StateFlow<List<Doctor>> = _doctors
 
-    init {
-        fetchDoctors()
-    }
+    private val apiService = FoursquareApiService.create()
 
-    private fun fetchDoctors() {
+    // Updated category mapping for more accurate results
+    private val specializationCategoryMap = mapOf(
+        "Skin Specialist" to "15019", // Dermatologist
+        "Gynecologist" to "15008", // OB-GYN
+        "Urologist" to "15022", // Urologist
+        "Child Specialist" to "15014", // Pediatrician
+        "Orthopedic Surgeon" to "15011", // Orthopedist
+        "Consultant Physician" to "15000", // Doctor's Office
+        "ENT Specialist" to "15023", // ENT
+        "Neurologist" to "15010", // Neurologist
+        "Eye Specialist" to "15012", // Ophthalmologist
+        "Psychiatrist" to "15016", // Psychiatrist
+        "Dentist" to "15007", // Dentist
+        "Gastroenterologist" to "15000", // General medical for specialty
+        "Heart Specialist" to "15003", // Cardiologist
+        "Pulmonologist" to "15000", // General medical for specialty
+        "General Physician" to "15000", // Doctor's Office
+        "Diabetes Specialist" to "15006", // Endocrinologist
+        "General Surgeon" to "15021", // Surgeon
+        "Endocrinologist" to "15006", // Endocrinologist
+        "Kidney Specialist" to "15009", // Nephrologist
+        "Pain Management" to "15000"  // General medical for specialty
+    )
+
+    fun findNearbyDoctors(latitude: Double, longitude: Double, specialization: String) {
         viewModelScope.launch {
-            val firestore = FirebaseFirestore.getInstance()
-            Log.d("DoctorsVM", "Starting to fetch doctors")
+            try {
+                // Get the category ID for the specialization or default to general medical (15000)
+                val categoryId = specializationCategoryMap[specialization] ?: "15000"
 
-            firestore.collection("doctors").get()
-                .addOnSuccessListener { result ->
-                    Log.d("DoctorsVM", "Fetch successful, document count: ${result.size()}")
-                    val doctorsList = result.map { document ->
+                Log.d("DoctorsVM", "Searching for specialization: $specialization with category: $categoryId")
+                Log.d("DoctorsVM", "Location coordinates: $latitude, $longitude")
+
+                val response = apiService.searchNearbyDoctors(
+                    latLng = "$latitude,$longitude",
+                    radius = 10000, // 10km radius
+                    categories = categoryId,
+                    limit = 20,
+                    apiKey = "fsq3Xa94bQVoTI9wGIWC5cpn3by+2PTm18H8AiWXlgbO9kc="
+                )
+
+                Log.d("DoctorsVM", "API Response: ${response.results.size} places found")
+
+                // Map response to Doctor objects with robust error handling
+                val doctorsList = response.results.mapNotNull { place ->
+                    try {
                         Doctor(
-                            name = document.getString("name") ?: "",
-                            profilePicture = document.getString("profilePicture") ?: "",
-                            qualification = document.getString("qualification") ?: "",
-                            specialization = document.getString("specialization") ?: ""
-                        ).also {
-                            Log.d("DoctorsVM", "Mapped doctor: ${it.name}")
-                        }
+                            id = place.fsq_id ?: "",
+                            name = place.name,
+                            qualification = place.categories?.firstOrNull()?.name ?: specialization,
+                            specialization = specialization,
+                            profilePicture = place.categories?.firstOrNull()?.icon?.let {
+                                "${it.prefix}64${it.suffix}"
+                            } ?: "",
+                            distance = place.distance ?: 0,
+                            address = place.location?.formatted_address
+                                ?: place.location?.address
+                                ?: "Address not available"
+                        )
+                    } catch (e: Exception) {
+                        Log.e("DoctorsVM", "Error mapping place to doctor: ${e.message}")
+                        null
                     }
+                }
+
+                if (doctorsList.isNotEmpty()) {
                     _doctors.value = doctorsList
-                    Log.d("DoctorsVM", "Updated doctors list size: ${doctorsList.size}")
+                    Log.d("DoctorsVM", "Found ${doctorsList.size} doctors nearby")
+                } else {
+                    // If no results with specific category, try with general medical category
+                    Log.d("DoctorsVM", "No doctors found with specific category, trying fallback...")
+                    try {
+                        val response = apiService.searchNearbyDoctors(
+                            latLng = "$latitude,$longitude",
+                            radius = 10000, // 10km radius
+                            categories = categoryId,
+                            limit = 20
+                            // API key is now provided in the service
+                        )
+
+                        val fallbackResponse = apiService.searchNearbyDoctors(
+                            latLng = "$latitude,$longitude",
+                            radius = 10000,
+                            categories = "15000", // General medical fallback
+                            limit = 20
+                            // API key is now provided in the service
+                        )
+
+                        val fallbackDoctors = fallbackResponse.results.mapNotNull { place ->
+                            try {
+                                Doctor(
+                                    id = place.fsq_id ?: "",
+                                    name = place.name,
+                                    qualification = place.categories?.firstOrNull()?.name ?: specialization,
+                                    specialization = specialization,
+                                    profilePicture = place.categories?.firstOrNull()?.icon?.let {
+                                        "${it.prefix}64${it.suffix}"
+                                    } ?: "",
+                                    distance = place.distance ?: 0,
+                                    address = place.location?.formatted_address
+                                        ?: place.location?.address
+                                        ?: "Address not available"
+                                )
+                            } catch (e: Exception) {
+                                Log.e("DoctorsVM", "Error mapping fallback place to doctor: ${e.message}")
+                                null
+                            }
+                        }
+
+                        _doctors.value = fallbackDoctors
+                        Log.d("DoctorsVM", "Found ${fallbackDoctors.size} doctors nearby (fallback)")
+                    } catch (e: Exception) {
+                        Log.e("DoctorsVM", "Error in fallback search: ${e.message}")
+                        _doctors.value = emptyList()
+                    }
                 }
-                .addOnFailureListener { exception ->
-                    Log.e("DoctorsVM", "Error fetching doctors", exception)
-                }
+            } catch (e: Exception) {
+                Log.e("DoctorsVM", "Error finding nearby doctors: ${e.message}")
+                e.printStackTrace()
+                _doctors.value = emptyList()
+            }
         }
     }
 }
+
+data class Doctor(
+    val id: String,
+    val name: String,
+    val qualification: String,
+    val specialization: String,
+    val profilePicture: String,
+    val distance: Int,
+    val address: String
+)

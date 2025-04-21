@@ -1,5 +1,7 @@
 package com.example.hellotabeeb.Screens.appointments
 
+import android.content.pm.PackageManager
+import android.location.Location
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,21 +30,54 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.google.android.gms.location.LocationServices
+import android.Manifest
+
 
 val BrandColor = Color(0xFF193F6C)
 val LightBrandColor = Color(0xFFE8EDF3)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DoctorsAvailable(navController: NavHostController, viewModel: DoctorsAvailableViewModel = viewModel()) {
+fun DoctorsAvailable(
+    navController: NavHostController,
+    specialization: String,
+    viewModel: DoctorsAvailableViewModel = viewModel()
+) {
     val doctors by viewModel.doctors.collectAsState()
     var selectedCity by remember { mutableStateOf("Lahore") }
     var showCityDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var isLoading by remember { mutableStateOf(true) }
 
     val cities = listOf("Lahore", "Islamabad", "Karachi")
+
+
+    // Get location and fetch doctors on launch
+    LaunchedEffect(specialization) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+            fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                location?.let {
+                    viewModel.findNearbyDoctors(it.latitude, it.longitude, specialization)
+                    isLoading = false
+                }
+            }
+        } else {
+            // Handle permission not granted
+            isLoading = false
+        }
+    }
+
+
 
     // City Selection Dialog
     if (showCityDialog) {
@@ -247,6 +282,28 @@ fun DoctorCard(doctor: Doctor) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+
+                Text(
+                    text = "${doctor.distance}m away",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = BrandColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = doctor.address,
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+
                 Text(
                     text = doctor.name,
                     color = BrandColor,

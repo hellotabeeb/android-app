@@ -85,9 +85,17 @@ fun AppNavigation(
             )
         }
 
-        // Add the new route for DoctorsAvailable
-        composable("doctors_available") {
-            DoctorsAvailable(navController)
+
+
+        // Keep only the parameterized version:
+        composable(
+            "doctors_available/{specialization}",
+            arguments = listOf(navArgument("specialization") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val specialization = URLDecoder.decode(backStackEntry.arguments?.getString("specialization"), "UTF-8")
+            DoctorsAvailable(navController, specialization)
         }
+
+
     }
 }

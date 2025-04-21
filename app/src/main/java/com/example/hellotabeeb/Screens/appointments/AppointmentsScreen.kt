@@ -36,6 +36,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import java.util.Locale
 import androidx.compose.ui.platform.LocalConfiguration
+import java.net.URLEncoder
 
 val BrandColor = Color(0xFF193F6C)
 
@@ -91,7 +92,8 @@ fun AppointmentsScreen(navController: NavHostController) {
             loading = loading
         )
         Spacer(modifier = Modifier.height(16.dp))
-        CategoryGrid(searchQuery = searchQuery.text)
+        CategoryGrid(searchQuery = searchQuery.text, navController = navController)
+
 
         // City Selection Dialog
         if (showCityDialog) {
@@ -246,7 +248,7 @@ fun AppointmentsTopBanner(
 }
 
 @Composable
-fun CategoryGrid(searchQuery: String) {
+fun CategoryGrid(searchQuery: String, navController: NavHostController) {
     val categories = listOf(
         Category("Skin Specialist", Icons.Default.Spa),
         Category("Gynecologist", Icons.Default.Female),
@@ -280,7 +282,7 @@ fun CategoryGrid(searchQuery: String) {
     }
 
     if (filteredCategories.isEmpty()) {
-        // Display "Nothing related" message if no categories match the search query
+        // Display message if no categories match
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -301,20 +303,22 @@ fun CategoryGrid(searchQuery: String) {
             modifier = Modifier.padding(16.dp)
         ) {
             items(filteredCategories) { category ->
-                CategoryItem(category)
+                CategoryItem(category, navController)
             }
         }
     }
 }
 
 @Composable
-fun CategoryItem(category: Category) {
+fun CategoryItem(category: Category, navController: NavHostController) {
     Card(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth()
-            .height(120.dp) // Fixed height for all cards
-            .clickable { /* Handle category click */ },
+            .height(120.dp)
+            .clickable {
+                navController.navigate("doctors_available/${URLEncoder.encode(category.name, "UTF-8")}")
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
