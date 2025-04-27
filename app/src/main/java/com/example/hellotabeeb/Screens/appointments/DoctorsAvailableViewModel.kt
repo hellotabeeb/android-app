@@ -8,6 +8,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class DoctorsAvailableViewModel : ViewModel() {
+
+
+companion object {
+    // Make the cache accessible for logging/debugging
+    val doctorCache = mutableMapOf<String, Doctor>()
+
+    fun getDoctorFromCache(doctorId: String): Doctor? {
+        return doctorCache[doctorId]
+    }
+
+    fun addDoctorToCache(doctor: Doctor) {
+        doctorCache[doctor.id] = doctor
+    }
+}
+
+
     private val _doctors = MutableStateFlow<List<Doctor>>(emptyList())
     val doctors: StateFlow<List<Doctor>> = _doctors
 
@@ -59,8 +75,11 @@ class DoctorsAvailableViewModel : ViewModel() {
                 // Map response to Doctor objects with robust error handling
                 val doctorsList = response.results.mapNotNull { place ->
                     try {
+                        // Add inside the try block before mapping the response
+                        Log.d("DoctorsVM", "Raw API response for first result: ${response.results.firstOrNull()}")
+                        Log.d("DoctorsVM", "FSQ ID for first result: ${response.results.firstOrNull()?.fsq_id}")
                         Doctor(
-                            id = place.fsq_id ?: "",
+                            id = place.fsq_id ?: "generated-${System.currentTimeMillis()}-${place.name.hashCode()}",
                             name = place.name,
                             qualification = place.categories?.firstOrNull()?.name ?: specialization,
                             specialization = specialization,
@@ -70,7 +89,18 @@ class DoctorsAvailableViewModel : ViewModel() {
                             distance = place.distance ?: 0,
                             address = place.location?.formatted_address
                                 ?: place.location?.address
-                                ?: "Address not available"
+                                ?: "Address not available",
+                            // Add missing parameters with appropriate values
+                            phone = place.tel,
+                            website = place.website,
+                            hours = place.hours?.display,
+                            isOpen = place.hours?.open_now,
+                            city = place.location?.locality,
+                            region = place.location?.region,
+                            country = place.location?.country,
+                            neighborhood = null, // Add if available in your response
+                            latitude = place.geocodes?.main?.latitude,
+                            longitude = place.geocodes?.main?.longitude
                         )
                     } catch (e: Exception) {
                         Log.e("DoctorsVM", "Error mapping place to doctor: ${e.message}")
@@ -80,6 +110,10 @@ class DoctorsAvailableViewModel : ViewModel() {
 
                 if (doctorsList.isNotEmpty()) {
                     _doctors.value = doctorsList
+                    // Add doctors to cache
+                    doctorsList.forEach { doctor ->
+                        addDoctorToCache(doctor)
+                    }
                     Log.d("DoctorsVM", "Found ${doctorsList.size} doctors nearby")
                 } else {
                     // If no results with specific category, try with general medical category
@@ -104,7 +138,7 @@ class DoctorsAvailableViewModel : ViewModel() {
                         val fallbackDoctors = fallbackResponse.results.mapNotNull { place ->
                             try {
                                 Doctor(
-                                    id = place.fsq_id ?: "",
+                                    id = place.fsq_id ?: "generated-${System.currentTimeMillis()}-${place.name.hashCode()}",
                                     name = place.name,
                                     qualification = place.categories?.firstOrNull()?.name ?: specialization,
                                     specialization = specialization,
@@ -114,7 +148,18 @@ class DoctorsAvailableViewModel : ViewModel() {
                                     distance = place.distance ?: 0,
                                     address = place.location?.formatted_address
                                         ?: place.location?.address
-                                        ?: "Address not available"
+                                        ?: "Address not available",
+                                    // New field mappings
+                                    phone = place.tel,
+                                    website = place.website,
+                                    hours = place.hours?.display,
+                                    isOpen = place.hours?.open_now,
+                                    city = place.location?.locality,
+                                    region = place.location?.region,
+                                    country = place.location?.country,
+                                    neighborhood = null, // Add if available in your response
+                                    latitude = place.geocodes?.main?.latitude,
+                                    longitude = place.geocodes?.main?.longitude
                                 )
                             } catch (e: Exception) {
                                 Log.e("DoctorsVM", "Error mapping fallback place to doctor: ${e.message}")
@@ -145,5 +190,16 @@ data class Doctor(
     val specialization: String,
     val profilePicture: String,
     val distance: Int,
-    val address: String
+    val address: String,
+    // New fields
+    val phone: String?,
+    val website: String?,
+    val hours: String?,
+    val isOpen: Boolean?,
+    val city: String?,
+    val region: String?,
+    val country: String?,
+    val neighborhood: String?,
+    val latitude: Double?,
+    val longitude: Double?
 )

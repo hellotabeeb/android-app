@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.hellotabeeb.Screens.appointments.BookingScreen
+import com.example.hellotabeeb.Screens.appointments.DoctorDetailScreen
 import com.example.hellotabeeb.Screens.appointments.DoctorsAvailable
 import com.example.hellotabeeb.Screens.labtests.AllLabsScreen
 import com.example.hellotabeeb.Screens.labtests.LabDetailScreen
@@ -95,6 +97,17 @@ fun AppNavigation(
             val specialization = URLDecoder.decode(backStackEntry.arguments?.getString("specialization"), "UTF-8")
             DoctorsAvailable(navController, specialization)
         }
+
+        // In Navigation.kt
+        composable(
+            "booking/{doctorId}",
+            arguments = listOf(navArgument("doctorId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
+            BookingScreen(navController, doctorId)
+        }
+
+
 
 
     }

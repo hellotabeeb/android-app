@@ -1,18 +1,22 @@
 package com.example.hellotabeeb.Screens.appointments
 
+
+import com.example.hellotabeeb.Screens.appointments.Doctor
+import com.example.hellotabeeb.Screens.appointments.DoctorsAvailableViewModel
+import com.example.hellotabeeb.Screens.homePage.BrandColor
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,26 +24,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
+import com.example.hellotabeeb.Screens.homePage.CitySelectionDialog
 import com.google.android.gms.location.LocationServices
 import android.Manifest
-
-
-val BrandColor = Color(0xFF193F6C)
-val LightBrandColor = Color(0xFFE8EDF3)
+import android.content.Intent
+import android.util.Log
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Schedule
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,9 +56,6 @@ fun DoctorsAvailable(
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
 
-    val cities = listOf("Lahore", "Islamabad", "Karachi")
-
-
     // Get location and fetch doctors on launch
     LaunchedEffect(specialization) {
         if (ContextCompat.checkSelfPermission(
@@ -69,72 +68,34 @@ fun DoctorsAvailable(
                 location?.let {
                     viewModel.findNearbyDoctors(it.latitude, it.longitude, specialization)
                     isLoading = false
+                } ?: run {
+                    // Handle case when location is null
+                    Log.e("DoctorsAvailable", "Location is null")
+                    isLoading = false
                 }
+            }.addOnFailureListener { e ->
+                Log.e("DoctorsAvailable", "Failed to get location: ${e.message}")
+                isLoading = false
             }
         } else {
-            // Handle permission not granted
             isLoading = false
         }
     }
 
-
-
     // City Selection Dialog
     if (showCityDialog) {
-        Dialog(
-            onDismissRequest = { showCityDialog = false }
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        "Select City",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = BrandColor,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    cities.forEach { city ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedCity = city
-                                    showCityDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = if (city == selectedCity) BrandColor else Color.Gray,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = city,
-                                fontSize = 16.sp,
-                                color = if (city == selectedCity) BrandColor else Color.Black,
-                                fontWeight = if (city == selectedCity) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        CitySelectionDialog(
+            cities = listOf(
+                "Lahore", "Karachi", "Islamabad", "Faisalabad", "Multan",
+                // Add more cities as needed
+            ),
+            onCitySelected = { selectedCity = it; showCityDialog = false },
+            onDismiss = { showCityDialog = false }
+        )
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F5))) {
-        // Enhanced TopAppBar
+        // TopAppBar with back button
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = BrandColor,
@@ -144,11 +105,20 @@ fun DoctorsAvailable(
                 TopAppBar(
                     title = {
                         Text(
-                            "Find Doctors",
+                            specialization,
                             color = Color.White,
-                            fontSize = 24.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White
+                            )
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = BrandColor
@@ -179,7 +149,7 @@ fun DoctorsAvailable(
 
                 // Subtitle
                 Text(
-                    "Expert healthcare at your fingertips",
+                    "Medical centers near you",
                     color = Color.White.copy(alpha = 0.8f),
                     fontSize = 14.sp,
                     modifier = Modifier.padding(horizontal = 16.dp)
@@ -187,14 +157,30 @@ fun DoctorsAvailable(
             }
         }
 
-        if (doctors.isEmpty()) {
+        // Loading state
+        if (isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = BrandColor)
             }
-        } else {
+        }
+        // Empty state
+        else if (doctors.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "No medical centers found nearby",
+                    color = Color.Gray,
+                    fontSize = 16.sp
+                )
+            }
+        }
+        // Results list
+        else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -202,7 +188,11 @@ fun DoctorsAvailable(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(doctors) { doctor ->
-                    DoctorCard(doctor)
+                    SimplifiedDoctorCard(
+                        doctor = doctor,
+                        navController = navController,
+                        onClick = { /* your existing onClick code */ }
+                    )
                 }
             }
         }
@@ -210,119 +200,251 @@ fun DoctorsAvailable(
 }
 
 @Composable
-fun DoctorCard(doctor: Doctor) {
+fun SimplifiedDoctorCard(
+    doctor: Doctor,
+    navController: NavHostController,
+    onClick: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val distanceInKm = String.format("%.1f", doctor.distance / 1000.0)
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(160.dp)
+            .clickable { expanded = !expanded }
             .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(16.dp),
+                elevation = 4.dp,
+                shape = RoundedCornerShape(12.dp),
                 spotColor = BrandColor.copy(alpha = 0.1f)
             ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Doctor Image with Coil3
-            var isLoading by remember { mutableStateOf(false) }
-            var isError by remember { mutableStateOf(false) }
+            // Medical Center Name
+            Text(
+                text = doctor.name,
+                color = BrandColor,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
 
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(LightBrandColor),
-                contentAlignment = Alignment.Center
+            // Specialization
+            Text(
+                text = doctor.specialization,
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+
+            // Location with icon and distance
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (doctor.profilePicture.isNotEmpty()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(doctor.profilePicture)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "Profile picture of ${doctor.name}",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Crop,
-                        onLoading = { isLoading = true },
-                        onError = { isError = true },
-                        onSuccess = {
-                            isLoading = false
-                            isError = false
-                        }
-                    )
-
-                    if (isLoading || isError) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = doctor.name,
-                            modifier = Modifier.size(60.dp),
-                            tint = BrandColor
-                        )
-                    }
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = doctor.name,
-                        modifier = Modifier.size(60.dp),
-                        tint = BrandColor
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = BrandColor,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = doctor.address,
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "$distanceInKm km",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = BrandColor
+                )
             }
 
-            // Doctor Info
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            // Expandable content
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Divider
+                    Divider(color = Color.LightGray)
 
-                Text(
-                    text = "${doctor.distance}m away",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
+                    // Hours (if available)
+                    doctor.hours?.let { hours ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = BrandColor,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = hours,
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            doctor.isOpen?.let {
+                                Text(
+                                    text = if (it) "Open Now" else "Closed",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (it) Color(0xFF4CAF50) else Color(0xFFE53935)
+                                )
+                            }
+                        }
+                    }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = BrandColor,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = doctor.address,
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
+                    // Contact Information (if available)
+                    doctor.phone?.takeIf { it.isNotEmpty() }?.let { phone ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val intent = Intent(Intent.ACTION_DIAL)
+                                    intent.data = Uri.parse("tel:$phone")
+                                    context.startActivity(intent)
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Phone,
+                                contentDescription = null,
+                                tint = BrandColor,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = phone,
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+
+                    // Website (if available)
+                    doctor.website?.takeIf { it.isNotEmpty() }?.let { website ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val intent = Intent(Intent.ACTION_VIEW)
+                                    intent.data = Uri.parse(website)
+                                    context.startActivity(intent)
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Public,
+                                contentDescription = null,
+                                tint = BrandColor,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = website,
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+
+                    // Action buttons in SimplifiedDoctorCard
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                // Cache the doctor before navigating
+                                DoctorsAvailableViewModel.addDoctorToCache(doctor)
+                                navController.navigate("booking/${doctor.id}")
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = BrandColor
+                            ),
+                            border = BorderStroke(1.dp, BrandColor)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = null,
+                                tint = BrandColor
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Book", fontSize = 12.sp)
+                        }
+
+                        // Call Button
+                        if (!doctor.phone.isNullOrEmpty()) {
+                            OutlinedButton(
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_DIAL)
+                                    intent.data = Uri.parse("tel:${doctor.phone}")
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = Color.Transparent,
+                                    contentColor = BrandColor
+                                ),
+                                border = BorderStroke(1.dp, BrandColor)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = null,
+                                    tint = BrandColor
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Call", fontSize = 12.sp)
+                            }
+                        }
+
+                        // Directions Button (if coordinates available)
+                        if (doctor.latitude != null && doctor.longitude != null) {
+                            OutlinedButton(
+                                onClick = {
+                                    val gmmIntentUri = Uri.parse("google.navigation:q=${doctor.latitude},${doctor.longitude}")
+                                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                                    mapIntent.setPackage("com.google.android.apps.maps")
+                                    context.startActivity(mapIntent)
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = Color.Transparent,
+                                    contentColor = BrandColor
+                                ),
+                                border = BorderStroke(1.dp, BrandColor)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DirectionsWalk,
+                                    contentDescription = null,
+                                    tint = BrandColor
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Map", fontSize = 12.sp)
+                            }
+                        }
+                    }
                 }
-
-                Text(
-                    text = doctor.name,
-                    color = BrandColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-
-                Text(
-                    text = doctor.qualification,
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-
-                Text(
-                    text = doctor.specialization,
-                    fontSize = 16.sp,
-                    color = BrandColor,
-                    fontWeight = FontWeight.Medium
-                )
             }
         }
     }

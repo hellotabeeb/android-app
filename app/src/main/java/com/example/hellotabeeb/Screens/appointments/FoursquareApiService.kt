@@ -12,15 +12,15 @@ import retrofit2.http.Query
 
 interface FoursquareApiService {
 
-    @GET("places/search")
-    suspend fun searchNearbyDoctors(
-        @Query("ll") latLng: String,
-        @Query("radius") radius: Int,
-        @Query("categories") categories: String,
-        @Query("limit") limit: Int,
-        @Query("fields") fields: String = "name,location,categories,distance,description",
-        @Header("Authorization") apiKey: String = BuildConfig.FOURSQUARE_API_KEY
-    ): PlacesSearchResponse
+@GET("places/search")
+suspend fun searchNearbyDoctors(
+    @Query("ll") latLng: String,
+    @Query("radius") radius: Int,
+    @Query("categories") categories: String,
+    @Query("limit") limit: Int,
+    @Query("fields") fields: String = "name,location,categories,distance,description,tel,website,hours,geocodes",
+    @Header("Authorization") apiKey: String = BuildConfig.FOURSQUARE_API_KEY
+): PlacesSearchResponse
 
     companion object {
         fun create(): FoursquareApiService {
